@@ -1,0 +1,128 @@
+[
+    {
+        "label": "No. PARTE",
+        "property": "Parnr",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "DESCRIPCION",
+        "property": "Text",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "DESCRIPCION EN INGLES",
+        "property": "description_en",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "CATEGORIA1",
+        "property": "category1",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "FRACCION ARANCELARIA",
+        "property": "ccngn",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "FA DESPERDICIO",
+        "property": "fa_desper",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "UM COMERCIAL",
+        "property": "lmein",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "UM TARIFA",
+        "property": "um_tarifa",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "PAIS DESTINO",
+        "property": "country",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "COSTO UNITARIO",
+        "property": "netpr",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "PESO EN KGS",
+        "property": "menge",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "REFERENCIA",
+        "property": "reference",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "OBSERVACIONES",
+        "property": "observations",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "FECHA ESTRUCTURA",
+        "property": "fecha_es",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "No. PARTE DEL COMPONENTE",
+        "property": "comp_parnr",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "UNIDAD COMPONENTE",
+        "property": "comp_unid",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "CANTIDAD INCORPORADA",
+        "property": "incorp_cant",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "CANT. MERMA",
+        "property": "merma_Cant",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "CANT. DESPERDICIO",
+        "property": "desper_Cant",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "FDESDE",
+        "property": "fdesde",
+        "width": 10,
+        "type": "String"
+    },
+    {
+        "label": "FHASTA",
+        "property": "f_hasta",
+        "width": 10,
+        "type": "String"
+    }
+]

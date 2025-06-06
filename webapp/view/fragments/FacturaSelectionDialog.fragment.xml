@@ -1,0 +1,43 @@
+<core:FragmentDefinition
+    id="VbelnFragment"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+>
+    
+    <Dialog
+        id="vh_Vbeln_Dialog"
+        title="{i18n>buscarRangoFacturas}"
+        draggable="true"
+        resizable="true"
+        contentWidth="400px">
+
+        <VBox class="sapUiSmallMargin">
+            <Label text="Factura inicial"/>
+            <Input id="factura_inicio" placeholder="Factura Inicial" value="{requestModel>/Virtual/factura_inicio}"/>
+
+            <Label text="Factura Final"/>
+            <Input id="factura_fin" placeholder="Factura Final" value="{requestModel>/Virtual/factura_fin}"/>
+
+            
+        </VBox>
+
+       
+
+        <beginButton>
+        <Button
+                text="Incluir en búsqueda"
+                press="includeInvoices"
+                class="sapUiTinyMarginTop"/>
+            
+        </beginButton>
+        <endButton>
+        
+            <Button text="{i18n>fragment.borrarRango}" press="onClose_VH_vbeln"/>
+        </endButton>
+    </Dialog>
+
+
+    <!--
+   
+    -->
+</core:FragmentDefinition>

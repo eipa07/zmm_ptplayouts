@@ -1,0 +1,16 @@
+/* Enter your custom styles here */
+
+#container-cuprum\.zmm_ptplayouts---Main--filterbar-wrapperfor-__layout1 > div:nth-child(2) {
+    /* Tu estilo aquí */
+    max-width: 30rem;
+}
+/* Estilo específico solo para el div padre del input proveedor */
+#container-cuprum\.zmm_ptplayouts---Main--MainView_Input_LifnrVH-inner {
+    width: 100% !important; /* Asegura que el input use todo el espacio disponible */
+}
+
+/* Estilo para el contenedor SAPUI5 que lo aloja */
+#container-cuprum\.zmm_ptplayouts---Main--MainView_Input_LifnrVH {
+    max-width: 30rem !important;
+    flex-basis: 30rem !important;
+}

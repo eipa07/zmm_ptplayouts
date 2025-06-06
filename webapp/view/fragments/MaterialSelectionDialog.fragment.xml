@@ -1,0 +1,48 @@
+<core:FragmentDefinition
+    id="MaterialFragment"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+>
+    
+    <Dialog
+        id="vh_Material_Dialog"
+        title="{i18n>buscarRangoMaterial}"
+        draggable="true"
+        resizable="true"
+        contentWidth="50%">
+
+        <VBox class="sapUiSmallMargin">
+            <Label text="{i18n>Material_inicial}"/>
+            <Input id="material_inicio" placeholder="{i18n>material_inicial}" value="{requestModel>/Global/material_inicio}" showSuggestion="true" suggest="onSuggestMaterial"
+                    suggestionItems="{
+                    path: 'materialModel>/',
+                    sorter: { path: 'Parnr' }
+                }">
+                <suggestionItems>
+                    <core:ListItem text="{materialModel>Parnr}" additionalText="{materialModel>ParnrDescription}" /> 
+                </suggestionItems>
+            </Input>
+            <Label text="{i18n>Material_final}"/>
+            <Input id="material_fin" placeholder="{i18n>material_final}" value="{requestModel>/Global/material_fin}" showSuggestion="true" suggest="onSuggestMaterial"
+                    suggestionItems="{
+                    path: 'materialModel>/',
+                    sorter: { path: 'Parnr' }
+                }">
+                <suggestionItems>
+                    <core:ListItem text="{materialModel>Parnr}" additionalText="{materialModel>ParnrDescription}" /> 
+                </suggestionItems>
+            </Input>
+        </VBox>
+        <beginButton>
+        <Button
+                text="{i18n>incluirBusqueda}"
+                press="includeMaterial"
+                class="sapUiTinyMarginTop"/>
+            
+        </beginButton>
+        <endButton>
+        
+            <Button text="{i18n>fragment.borrarRango}" press="onClose_VH_Material"/>
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>
