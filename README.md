@@ -40,3 +40,11 @@ An SAP Fiori application.
 1. Active NodeJS LTS (Long Term Support) version and associated supported NPM version.  (See https://nodejs.org)
 
 
+OT's
+
+1. DS4K908761 => EPINA FIORI - 4314 - PTP - Lauouts
+2. DS4K920331 => EPINA FIORI - 4314 PTP LAYOUTS - Fix PRD issue
+3. DS4K920665 => EPINA FIORI - 4314 PTP LAYOUTS - Fix PRD issue v2
+4. DS4K921036 => EPINA FIORI - 4314 PTP LAYOUTS - Fix PRD issue v3
+
+

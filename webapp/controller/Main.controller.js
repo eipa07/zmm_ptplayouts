@@ -7,7 +7,7 @@ sap.ui.define([
     "sap/m/MessageBox",
     "sap/ui/core/Fragment",
     "sap/m/MessageToast",
-    "cuprum/zmm_ptplayouts/model/formatter",
+    "cuprum/zmm_ptplayouts/model/formatter"
 ],
 
     /**
@@ -20,9 +20,10 @@ sap.ui.define([
       * @param {typeof sap.m.MessageBox} MessageBox
       * @param {typeof sap.ui.core.Fragment} Fragment
       * @param {sap.m.MessageToast} MessageToast 
+      * 
       */
 
-    function (BaseController, Filter, FilterOperator, JSONModel, Spreadsheet, MessageBox, Fragment, MessageToast, formatter) {
+    function (BaseController, Filter, FilterOperator, JSONModel, Spreadsheet, MessageBox, Fragment, MessageToast, formatter, BusyIndicator) {
         "use strict";
 
         formatter: formatter;
@@ -116,7 +117,7 @@ sap.ui.define([
             }, */
 
             onVHLifnrRequest: function (oEvent) {
-                const oTipoBusqueda = "Proveedor";
+                let oTipoBusqueda = "Proveedor";
 
                 this._loadRemoteOdataServices(_layout, oTipoBusqueda);
 
@@ -513,8 +514,8 @@ sap.ui.define([
             getLayout: async function (_layout, _oModelLayout) {
 
                 this.getView().setBusy(true);
-                const _that = this;
-                const _params = this.getUrlFilters(_layout);
+                let _that = this;
+                let _params = this.getUrlFilters(_layout);
 
                 let aResults = [];
 
@@ -524,7 +525,7 @@ sap.ui.define([
                         _oModelLayout.read(sUrlCount, {
                             filters: aFilters,
                             success: function (_count, response) {
-                                const iTotal = parseInt(_count);
+                                let iTotal = parseInt(_count);
                                 resolve(iTotal);
                             },
                             error: reject
@@ -535,7 +536,7 @@ sap.ui.define([
                 // 2. Cargar datos usando una URL específica (puede ser la original o la que devuelve __next)
                 async function loadData(sUrl, aFilters, bFirstCall = false, iTop = 5000) {
                     return new Promise((resolve, reject) => {
-                        const oReadConfig = {
+                        let oReadConfig = {
                             success: resolve,
                             error: reject
                         };
@@ -555,17 +556,17 @@ sap.ui.define([
                 try {
                     let sUrl = _params[0].url;
                     let sUrlCount = _params[0].urlCount;
-                    const aFilters = _params[0].filters;
+                    let aFilters = _params[0].filters;
 
                     // 3. Obtener total de registros
-                    const iTotal = await getCount(sUrlCount, aFilters);
+                    let iTotal = await getCount(sUrlCount, aFilters);
 
                     let hasMore = true;
                     let bFirstCall = true;
 
                     // 4. Loop de paginación
                     while (hasMore) {
-                        const oData = await loadData(sUrl, aFilters, bFirstCall, iTotal);
+                        let oData = await loadData(sUrl, aFilters, bFirstCall, iTotal);
                         bFirstCall = false;
 
                         aResults = aResults.concat(oData.results || []);
@@ -574,8 +575,8 @@ sap.ui.define([
                             console.log("Next URL:", oData.__next);
 
                             // Asegura que la URL sea relativa y correcta
-                            const sNextQuery = oData.__next.split("/Set?")[1];
-                            const sBaseUrl = "/ZZ1_CDS_LAYOUT_EV(p_fecha='" + _params[0].fecha + "')/Set?" + sNextQuery;
+                            let sNextQuery = oData.__next.split("/Set?")[1];
+                            let sBaseUrl = "/ZZ1_CDS_LAYOUT_EV(p_fecha='" + _params[0].fecha + "')/Set?" + sNextQuery;
                             sUrl = sBaseUrl;
                         } else {
                             hasMore = false;
@@ -583,7 +584,7 @@ sap.ui.define([
                     }
 
                     // 5. Mostrar resultados si hay
-                    const oModel = new sap.ui.model.json.JSONModel();
+                    let oModel = new sap.ui.model.json.JSONModel();
                     oModel.setData(aResults);
                     console.log(aResults);
 
@@ -605,7 +606,7 @@ sap.ui.define([
 
                 } catch (oError) {
                     console.log("Error al cargar el layout:", oError);
-                    const oBundle = this.get_Resource_Bundle();
+                    let oBundle = this.get_Resource_Bundle();
                     let _msgerrorCargaLayout = oBundle.getText("sinResultados");
                     MessageBox.error(_msgerrorCargaLayout);
                 } finally {
@@ -724,6 +725,9 @@ sap.ui.define([
  * @param {string} tipoBusqueda - (opcional) Identificador de tipo de búsqueda
  */
             _loadRemoteOdataServices: async function (_layout, tipoBusqueda = '') {
+                let oRequestModel = this.getView().getModel("requestModel");
+                oRequestModel.setProperty("/Global/isBusyVH", true);
+                let that = this;
 
                 /**
                  * Llama al endpoint $count para obtener el total de registros disponibles
@@ -735,7 +739,7 @@ sap.ui.define([
                     return new Promise((resolve, reject) => {
                         oModel.read(sUrlCount, {
                             success: function (_count) {
-                                const iTotal = parseInt(_count);
+                                let iTotal = parseInt(_count);
                                 resolve(iTotal);
                             },
                             error: reject
@@ -771,11 +775,12 @@ sap.ui.define([
 
                 // Acumulador de resultados
                 let aResults = [];
-                const _that = this;
+                let _that = this;
 
                 // Solo aplica para layout virtual (puedes extender a c_pt, c_mp si deseas)
                 if (_layout === c_virtual) {
                     try {
+                        oRequestModel.setProperty("/Global/isBusyVH", true);
                         // Si el modelo aún no ha sido cargado, procedemos
                         if (!this.getView().getModel("materialModel_ev")) {
 
@@ -856,20 +861,24 @@ sap.ui.define([
 
 
 
-                      
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", false);
 
-                        
+
                     } catch (error) {
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", false);
                         // Captura y muestra errores de lectura
                         console.error("Error al cargar datos remotos:", error);
                         MessageBox.error("Error cargando datos del backend EV.");
                     }
-                
-            
-                }else if (_layout === c_mp) {
 
-                
+
+                } else if (_layout === c_mp) {
+
+
                     try {
+                        oRequestModel.setProperty("/Global/isBusyVH", true);
                         // Si el modelo aún no ha sido cargado, procedemos
                         if (!this.getView().getModel("proveedorlModel_mp")) {
 
@@ -947,20 +956,26 @@ sap.ui.define([
                                 MessageBox.warning(_msgSinResultados);
                             }
                         }
-                        
+
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", false);
+
                     } catch (error) {
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", false);
                         // Captura y muestra errores de lectura
                         console.error("Error al cargar datos remotos:", error);
                         MessageBox.error("Error cargando datos del backend MP.");
                     }
-                
-                
-                
-                
-                } else if (_layout === c_pt){
+
+
+
+
+                } else if (_layout === c_pt) {
 
 
                     try {
+                        oRequestModel.setProperty("/Global/isBusyVH", true);
                         // Si el modelo aún no ha sido cargado, procedemos
                         if (!this.getView().getModel("materialModel_pt")) {
 
@@ -1038,9 +1053,14 @@ sap.ui.define([
                                 MessageBox.warning(_msgSinResultados);
                             }
                         }
-                        
+
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", fasle);
+
                     } catch (error) {
                         // Captura y muestra errores de lectura
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", false);
                         console.error("Error al cargar datos remotos:", error);
                         MessageBox.error("Error cargando datos del backend PT.");
                     }
@@ -1048,351 +1068,396 @@ sap.ui.define([
 
 
                 }
-    },
+            },
 
 
 
-    clearTable: function (_tableID) {
+            clearTable: function (_tableID) {
 
-        if (this.getView().getModel("requestModel").getProperty("/Global/tableEV")) {
+                if (this.getView().getModel("requestModel").getProperty("/Global/tableEV")) {
 
-            if (this.getView().getModel("evLayoutModel")) {
-                this.getView().getModel("evLayoutModel").setData();
-            }
+                    if (this.getView().getModel("evLayoutModel")) {
+                        this.getView().getModel("evLayoutModel").setData();
+                    }
 
-        } else if (this.getView().getModel("requestModel").getProperty("/Global/tableMP")) {
-            if (this.getView().getModel("mpLayoutModel")) {
-                this.getView().getModel("mpLayoutModel").setData();
-            }
+                } else if (this.getView().getModel("requestModel").getProperty("/Global/tableMP")) {
+                    if (this.getView().getModel("mpLayoutModel")) {
+                        this.getView().getModel("mpLayoutModel").setData();
+                    }
 
-        } if (this.getView().getModel("requestModel").getProperty("/Global/tablePT")) {
+                } if (this.getView().getModel("requestModel").getProperty("/Global/tablePT")) {
 
-            if (this.getView().getModel("ptLayoutModel")) {
-                this.getView().getModel("ptLayoutModel").setData();
-            }
-
-
-        }
-
-    },
-
-    poSelectionFinish: function (oEvent) {
-
-        var selectedItems = oEvent.getParameter("selectedItems");
-        var _items = [];
-
-        if (selectedItems.length > 0) {
-            selectedItems.forEach((element) =>
-                _items.push({
-                    "ebeln": element.getProperty("key")
-                })
-            );
-        }
-
-        this.getView().getModel("requestModel").setProperty("/po", []);
-        this.getView().getModel("requestModel").setProperty("/po", _items);
-
-    },
-
-    materialSelectionFinish: function (oEvent) {
-
-        var selectedItems = oEvent.getParameter("selectedItems");
-        var _items = [];
-
-        if (selectedItems.length > 0) {
-            selectedItems.forEach((element) =>
-                _items.push({
-                    "Parnr": element.getProperty("key")
-                })
-            );
-        }
-
-        this.getView().getModel("requestModel").setProperty("/material", []);
-        this.getView().getModel("requestModel").setProperty("/material", _items);
-
-    },
-
-    bukrsSelectionFinish: function (oEvent) {
-
-        var selectedItems = oEvent.getParameter("selectedItems");
-        var _items = [];
-
-        if (selectedItems.length > 0) {
-            selectedItems.forEach((element) =>
-                _items.push({
-                    "bukrs": element.getProperty("key")
-                })
-            );
-        }
-
-        this.getView().getModel("requestModel").setProperty("/Global/bukrs", []);
-        this.getView().getModel("requestModel").setProperty("/Global/bukrs", _items);
-
-    },
-
-    clearAllFilters: function (_tableID) {
-        const oTable = this.byId(_tableID);
-        const aColumns = oTable.getColumns();
-        for (let i = 0; i < aColumns.length; i++) {
-            oTable.filter(aColumns[i], null);
-        }
-    },
+                    if (this.getView().getModel("ptLayoutModel")) {
+                        this.getView().getModel("ptLayoutModel").setData();
+                    }
 
 
-    onVH_vbeln_request(oEvent) {
-    console.log("onVH_vbeln_request");
-    if(!this._oVH_factura_Dialog) {
-    this._oVH_factura_Dialog = Fragment.load({
-        name: "cuprum.zmm_ptplayouts.view.fragments.FacturaSelectionDialog",
-        controller: this
-    }).then(function (oDialog) {
-        this.getView().addDependent(oDialog);
-        return oDialog;
-    }.bind(this));
-}
-
-this._oVH_factura_Dialog.then(function (oDialog) {
-    oDialog.open();
-});
+                }
 
             },
 
-onClose_VH_vbeln() {
+            poSelectionFinish: function (oEvent) {
 
-    var that = this;
+                var selectedItems = oEvent.getParameter("selectedItems");
+                var _items = [];
 
-    this._oVH_factura_Dialog.then(function (oDialog) {
-        that.getView().getModel("requestModel").setProperty("/Virtual/factura_inicio", "");
-        that.getView().getModel("requestModel").setProperty("/Virtual/factura_fin", "");
-        oDialog.close();
-    });
-},
+                if (selectedItems.length > 0) {
+                    selectedItems.forEach((element) =>
+                        _items.push({
+                            "ebeln": element.getProperty("key")
+                        })
+                    );
+                }
 
-includeInvoices() {
-    var that = this;
-    var oBundle = this.get_Resource_Bundle();
-    var _message = oBundle.getText("rangoFacturasIncluido");
-    this._oVH_factura_Dialog.then(function (oDialog) {
-        MessageToast.show(_message);
-        oDialog.close();
-    });
-},
+                this.getView().getModel("requestModel").setProperty("/po", []);
+                this.getView().getModel("requestModel").setProperty("/po", _items);
 
-onClose_VH_ebeln() {
+            },
 
-    var that = this;
+            materialSelectionFinish: function (oEvent) {
 
-    this._oVH_ebeln_Dialog.then(function (oDialog) {
-        that.getView().getModel("requestModel").setProperty("/Virtual/oc_inicio", "");
-        that.getView().getModel("requestModel").setProperty("/Virtual/oc_fin", "");
-        oDialog.close();
-    });
-},
+                var selectedItems = oEvent.getParameter("selectedItems");
+                var _items = [];
 
-includeEbeln() {
-    var that = this;
-    var oBundle = this.get_Resource_Bundle();
-    var _message = oBundle.getText("rangoOCIncluido");
-    this._oVH_ebeln_Dialog.then(function (oDialog) {
-        MessageToast.show(_message);
-        oDialog.close();
-    });
-},
+                if (selectedItems.length > 0) {
+                    selectedItems.forEach((element) =>
+                        _items.push({
+                            "Parnr": element.getProperty("key")
+                        })
+                    );
+                }
 
-onVH_ebeln_request(oEvent) {
-    console.log("onVH_ebeln_request");
-    if (!this._oVH_ebeln_Dialog) {
-        this._oVH_ebeln_Dialog = Fragment.load({
-            name: "cuprum.zmm_ptplayouts.view.fragments.OC_SelectionDialog",
-            controller: this
-        }).then(function (oDialog) {
-            this.getView().addDependent(oDialog);
-            return oDialog;
-        }.bind(this));
-    }
+                this.getView().getModel("requestModel").setProperty("/material", []);
+                this.getView().getModel("requestModel").setProperty("/material", _items);
 
-    this._oVH_ebeln_Dialog.then(function (oDialog) {
-        oDialog.open();
-    });
+            },
 
-},
+            bukrsSelectionFinish: function (oEvent) {
 
-onVH_material_request(oEvent) {
+                var selectedItems = oEvent.getParameter("selectedItems");
+                var _items = [];
 
-    const oTipoBusqueda = "Material";
+                if (selectedItems.length > 0) {
+                    selectedItems.forEach((element) =>
+                        _items.push({
+                            "bukrs": element.getProperty("key")
+                        })
+                    );
+                }
 
-    this._loadRemoteOdataServices(_layout, oTipoBusqueda);
+                this.getView().getModel("requestModel").setProperty("/Global/bukrs", []);
+                this.getView().getModel("requestModel").setProperty("/Global/bukrs", _items);
+
+            },
+
+            clearAllFilters: function (_tableID) {
+                let oTable = this.byId(_tableID);
+                let aColumns = oTable.getColumns();
+                for (let i = 0; i < aColumns.length; i++) {
+                    oTable.filter(aColumns[i], null);
+                }
+            },
 
 
+            onVH_vbeln_request(oEvent) {
+                console.log("onVH_vbeln_request");
+                if (!this._oVH_factura_Dialog) {
+                    this._oVH_factura_Dialog = Fragment.load({
+                        name: "cuprum.zmm_ptplayouts.view.fragments.FacturaSelectionDialog",
+                        controller: this
+                    }).then(function (oDialog) {
+                        this.getView().addDependent(oDialog);
+                        return oDialog;
+                    }.bind(this));
+                }
 
-    console.log("onVH_material_request");
-    if (!this._oVH_material_Dialog) {
-        this._oVH_material_Dialog = Fragment.load({
-            name: "cuprum.zmm_ptplayouts.view.fragments.MaterialSelectionDialog",
-            controller: this
-        }).then(function (oDialog) {
-            this.getView().addDependent(oDialog);
-            // ✅ Aquí usamos Fragment.byId para obtener controles internos
-            Fragment.byId("MaterialFragment", "material_inicio")?.attachSuggestionItemSelected(this.onMaterialSelected, this);
-            Fragment.byId("MaterialFragment", "material_fin")?.attachSuggestionItemSelected(this.onMaterialSelected, this);
+                this._oVH_factura_Dialog.then(function (oDialog) {
+                    oDialog.open();
+                });
 
-            return oDialog;
-        }.bind(this));
-    }
+            },
 
-    this._oVH_material_Dialog.then(function (oDialog) {
-        oDialog.open();
-    });
+            onClose_VH_vbeln() {
 
-},
+                var that = this;
 
-onClose_VH_Material() {
-    var that = this;
-    this._oVH_material_Dialog.then(function (oDialog) {
-        that.getView().getModel("requestModel").setProperty("/Global/material_inicio", "");
-        that.getView().getModel("requestModel").setProperty("/Global/material_fin", "");
-        oDialog.close();
-    });
-},
+                this._oVH_factura_Dialog.then(function (oDialog) {
+                    that.getView().getModel("requestModel").setProperty("/Virtual/factura_inicio", "");
+                    that.getView().getModel("requestModel").setProperty("/Virtual/factura_fin", "");
+                    oDialog.close();
+                });
+            },
 
-includeMaterial() {
-    var oBundle = this.get_Resource_Bundle();
-    var _message = oBundle.getText("rangoMaterialIncluido");
-    this._oVH_material_Dialog.then(function (oDialog) {
-        MessageToast.show(_message);
-        oDialog.close();
-    });
-},
+            includeInvoices() {
+                var that = this;
+                var oBundle = this.get_Resource_Bundle();
+                var _message = oBundle.getText("rangoFacturasIncluido");
+                this._oVH_factura_Dialog.then(function (oDialog) {
+                    MessageToast.show(_message);
+                    oDialog.close();
+                });
+            },
 
-onVH_Sociedad_request(oEvent) {
+            onClose_VH_ebeln() {
 
-    this._loadRemoteOdataServices(_layout);
-    console.log("onVH_material_request");
-    if (!this._oVH_sociedad_Dialog) {
-        this._oVH_sociedad_Dialog = Fragment.load({
-            name: "cuprum.zmm_ptplayouts.view.fragments.SociedadSelectionDialog",
-            controller: this
-        }).then(function (oDialog) {
-            this.getView().addDependent(oDialog);
-            return oDialog;
-        }.bind(this));
-    }
-    this._oVH_sociedad_Dialog.then(function (oDialog) {
-        oDialog.open();
-    });
+                var that = this;
 
-},
+                this._oVH_ebeln_Dialog.then(function (oDialog) {
+                    that.getView().getModel("requestModel").setProperty("/Virtual/oc_inicio", "");
+                    that.getView().getModel("requestModel").setProperty("/Virtual/oc_fin", "");
+                    oDialog.close();
+                });
+            },
 
-onClose_VH_Sociedad() {
-    var that = this;
-    this._oVH_sociedad_Dialog.then(function (oDialog) {
-        that.getView().getModel("requestModel").setProperty("/Global/sociedad_inicio", "");
-        that.getView().getModel("requestModel").setProperty("/Global/sociedad_fin", "");
-        oDialog.close();
-    });
-},
+            includeEbeln() {
+                var that = this;
+                var oBundle = this.get_Resource_Bundle();
+                var _message = oBundle.getText("rangoOCIncluido");
+                this._oVH_ebeln_Dialog.then(function (oDialog) {
+                    MessageToast.show(_message);
+                    oDialog.close();
+                });
+            },
 
-includeSociedad() {
-    var oBundle = this.get_Resource_Bundle();
-    var _message = oBundle.getText("rangoSociedadIncluido");
-    this._oVH_sociedad_Dialog.then(function (oDialog) {
-        MessageToast.show(_message);
-        oDialog.close();
-    });
-},
+            onVH_ebeln_request(oEvent) {
+                console.log("onVH_ebeln_request");
+                if (!this._oVH_ebeln_Dialog) {
+                    this._oVH_ebeln_Dialog = Fragment.load({
+                        name: "cuprum.zmm_ptplayouts.view.fragments.OC_SelectionDialog",
+                        controller: this
+                    }).then(function (oDialog) {
+                        this.getView().addDependent(oDialog);
+                        return oDialog;
+                    }.bind(this));
+                }
 
-onSuggestMaterial: function (oEvent) {
-    const sTerm = oEvent.getParameter("suggestValue").toLowerCase();
-    const oInput = oEvent.getSource();
-    const oBinding = oInput.getBinding("suggestionItems");
+                this._oVH_ebeln_Dialog.then(function (oDialog) {
+                    oDialog.open();
+                });
 
-    if (oBinding) {
-        const oFilter = new sap.ui.model.Filter({
-            filters: [
-                new sap.ui.model.Filter("Parnr", sap.ui.model.FilterOperator.Contains, sTerm),
-                new sap.ui.model.Filter("ParnrDescription", sap.ui.model.FilterOperator.Contains, sTerm)
-            ],
-            and: false // <- Muy importante: hace un OR entre filtros
-        });
+            },
 
-        oBinding.filter([oFilter]);
-    }
-},
+            onVH_material_request(oEvent) {
 
-onSuggestSociedad: function (oEvent) {
-    const sTerm = oEvent.getParameter("suggestValue").toLowerCase();
-    const oInput = oEvent.getSource();
-    const oBinding = oInput.getBinding("suggestionItems");
+                const oTipoBusqueda = "Material";
 
-    if (oBinding) {
-        const oFilter = new sap.ui.model.Filter({
-            filters: [
-                new sap.ui.model.Filter("bukrs", sap.ui.model.FilterOperator.Contains, sTerm),
-                new sap.ui.model.Filter("butxt", sap.ui.model.FilterOperator.Contains, sTerm)
-            ],
-            and: false // <- Muy importante: hace un OR entre filtros
-        });
-
-        oBinding.filter([oFilter]);
-    }
-},
-
-onSuggestProveedor: function (oEvent) {
-    const sTerm = oEvent.getParameter("suggestValue").toLowerCase();
-    const oInput = oEvent.getSource();
-    const oBinding = oInput.getBinding("suggestionItems");
-
-    if (oBinding) {
-        const oFilter = new sap.ui.model.Filter({
-            filters: [
-                new sap.ui.model.Filter("Lifnr", sap.ui.model.FilterOperator.Contains, sTerm),
-                new sap.ui.model.Filter("LifnrName", sap.ui.model.FilterOperator.Contains, sTerm)
-            ],
-            and: false // <- Muy importante: hace un OR entre filtros
-        });
-
-        oBinding.filter([oFilter]);
-    }
-},
+                this._loadRemoteOdataServices(_layout, oTipoBusqueda);
 
 
-onMaterialSelected: function (oEvent) {
-    const oSelectedItem = oEvent.getParameter("selectedItem");
-    const oInput = oEvent.getSource();
 
-    if (oSelectedItem && oInput) {
-        const sValue = oSelectedItem.getAdditionalText(); // Parnr
+                console.log("onVH_material_request");
+                if (!this._oVH_material_Dialog) {
+                    this._oVH_material_Dialog = Fragment.load({
+                        name: "cuprum.zmm_ptplayouts.view.fragments.MaterialSelectionDialog",
+                        controller: this
+                    }).then(function (oDialog) {
+                        this.getView().addDependent(oDialog);
+                        // ✅ Aquí usamos Fragment.byId para obtener controles internos
+                        Fragment.byId("MaterialFragment", "material_inicio")?.attachSuggestionItemSelected(this.onMaterialSelected, this);
+                        Fragment.byId("MaterialFragment", "material_fin")?.attachSuggestionItemSelected(this.onMaterialSelected, this);
 
-        // Obtener el path del modelo donde está bindeado el Input
-        const sPath = oInput.getBinding("value")?.getPath();
+                        return oDialog;
+                    }.bind(this));
+                }
 
-        if (sPath) {
-            this.getView().getModel("requestModel").setProperty(sPath, sValue);
-        }
+                this._oVH_material_Dialog.then(function (oDialog) {
+                    oDialog.open();
+                });
 
-        // Visualmente también lo puedes actualizar por si no refresca
-        oInput.setValue(sValue);
-    }
-},
+            },
 
-onSociedadSelected: function (oEvent) {
-    const oSelectedItem = oEvent.getParameter("selectedItem");
-    const oInput = oEvent.getSource();
+            onClose_VH_Material() {
+                var that = this;
+                this._oVH_material_Dialog.then(function (oDialog) {
+                    that.getView().getModel("requestModel").setProperty("/Global/material_inicio", "");
+                    that.getView().getModel("requestModel").setProperty("/Global/material_fin", "");
+                    oDialog.close();
+                });
+            },
 
-    if (oSelectedItem && oInput) {
-        const sValue = oSelectedItem.getAdditionalText(); // Parnr
+            includeMaterial() {
+                var oBundle = this.get_Resource_Bundle();
+                var _message = oBundle.getText("rangoMaterialIncluido");
+                this._oVH_material_Dialog.then(function (oDialog) {
+                    MessageToast.show(_message);
+                    oDialog.close();
+                });
+            },
 
-        // Obtener el path del modelo donde está bindeado el Input
-        const sPath = oInput.getBinding("value")?.getPath();
+            /* onVH_Sociedad_request(oEvent) {
 
-        if (sPath) {
-            this.getView().getModel("requestModel").setProperty(sPath, sValue);
-        }
+                
 
-        // Visualmente también lo puedes actualizar por si no refresca
-        oInput.setValue(sValue);
-    }
-}
+                this._loadRemoteOdataServices(_layout);
+                console.log("onVH_material_request");
+                if (!this._oVH_sociedad_Dialog) {
+                    this._oVH_sociedad_Dialog = Fragment.load({
+                        name: "cuprum.zmm_ptplayouts.view.fragments.SociedadSelectionDialog",
+                        controller: this
+                    }).then(function (oDialog) {
+                        this.getView().addDependent(oDialog);
+                        return oDialog;
+                    }.bind(this));
+                }
+                this._oVH_sociedad_Dialog.then(function (oDialog) {
+                    oDialog.open();
+                });
+
+            }, */
+
+            onVH_Sociedad_request: function (oEvent) {
+                let oView = this.getView();
+                let oBundle = this.get_Resource_Bundle();
+                let oModel = oView.getModel("requestModel");
+
+                try {
+                    // Marcar el ValueHelp como ocupado (bloquea el diálogo)
+                    oModel.setProperty("/Global/isBusyVH", true);
+                    console.log("[INFO] Abriendo ValueHelp de Sociedad...");
+
+                    this._loadRemoteOdataServices(_layout);
+
+                    if (!this._oVH_sociedad_Dialog) {
+                        this._oVH_sociedad_Dialog = Fragment.load({
+                            name: "cuprum.zmm_ptplayouts.view.fragments.SociedadSelectionDialog",
+                            controller: this
+                        }).then(function (oDialog) {
+                            oView.addDependent(oDialog);
+                            return oDialog;
+                        });
+                    }
+
+                    this._oVH_sociedad_Dialog.then(function (oDialog) {
+                        oDialog.open();
+
+                        // Simular carga o cuando termine el backend
+                        /* setTimeout(() => {
+                            oModel.setProperty("/Global/isBusyVH", false);
+                            console.log("[INFO] ValueHelp abierto correctamente.");
+                        }, 800); */
+                    }).catch(function (oError) {
+                        oModel.setProperty("/Global/isBusyVH", false);
+                        console.error("[ERROR] ValueHelp:", oError);
+                        sap.m.MessageBox.error(oBundle.getText("error.cargar_fragmento"));
+                    });
+
+                } catch (oError) {
+                    oModel.setProperty("/Global/isBusyVH", false);
+                    sap.m.MessageBox.error(oBundle.getText("error.proceso_general"));
+                }
+            },
+
+
+            onClose_VH_Sociedad() {
+                var that = this;
+                this._oVH_sociedad_Dialog.then(function (oDialog) {
+                    that.getView().getModel("requestModel").setProperty("/Global/sociedad_inicio", "");
+                    that.getView().getModel("requestModel").setProperty("/Global/sociedad_fin", "");
+                    oDialog.close();
+                });
+            },
+
+            includeSociedad() {
+                var oBundle = this.get_Resource_Bundle();
+                var _message = oBundle.getText("rangoSociedadIncluido");
+                this._oVH_sociedad_Dialog.then(function (oDialog) {
+                    MessageToast.show(_message);
+                    oDialog.close();
+                });
+            },
+
+            onSuggestMaterial: function (oEvent) {
+                let sTerm = oEvent.getParameter("suggestValue").toLowerCase();
+                let oInput = oEvent.getSource();
+                let oBinding = oInput.getBinding("suggestionItems");
+
+                if (oBinding) {
+                    let oFilter = new sap.ui.model.Filter({
+                        filters: [
+                            new sap.ui.model.Filter("Parnr", sap.ui.model.FilterOperator.Contains, sTerm),
+                            new sap.ui.model.Filter("ParnrDescription", sap.ui.model.FilterOperator.Contains, sTerm)
+                        ],
+                        and: false
+                    });
+
+                    oBinding.filter([oFilter]);
+                }
+            },
+
+            onSuggestSociedad: function (oEvent) {
+                let sTerm = oEvent.getParameter("suggestValue").toLowerCase();
+                let oInput = oEvent.getSource();
+                let oBinding = oInput.getBinding("suggestionItems");
+
+                if (oBinding) {
+                    let oFilter = new sap.ui.model.Filter({
+                        filters: [
+                            new sap.ui.model.Filter("bukrs", sap.ui.model.FilterOperator.Contains, sTerm),
+                            new sap.ui.model.Filter("butxt", sap.ui.model.FilterOperator.Contains, sTerm)
+                        ],
+                        and: false
+                    });
+
+                    oBinding.filter([oFilter]);
+                }
+            },
+
+            onSuggestProveedor: function (oEvent) {
+                let sTerm = oEvent.getParameter("suggestValue").toLowerCase();
+                let oInput = oEvent.getSource();
+                let oBinding = oInput.getBinding("suggestionItems");
+
+                if (oBinding) {
+                    let oFilter = new sap.ui.model.Filter({
+                        filters: [
+                            new sap.ui.model.Filter("Lifnr", sap.ui.model.FilterOperator.Contains, sTerm),
+                            new sap.ui.model.Filter("LifnrName", sap.ui.model.FilterOperator.Contains, sTerm)
+                        ],
+                        and: false
+                    });
+
+                    oBinding.filter([oFilter]);
+                }
+            },
+
+
+            onMaterialSelected: function (oEvent) {
+                let oSelectedItem = oEvent.getParameter("selectedItem");
+                let oInput = oEvent.getSource();
+
+                if (oSelectedItem && oInput) {
+                    let sValue = oSelectedItem.getAdditionalText(); // Parnr
+
+                    // Obtener el path del modelo donde está bindeado el Input
+                    let sPath = oInput.getBinding("value")?.getPath();
+
+                    if (sPath) {
+                        this.getView().getModel("requestModel").setProperty(sPath, sValue);
+                    }
+
+                    // Visualmente también lo puedes actualizar por si no refresca
+                    oInput.setValue(sValue);
+                }
+            },
+
+            onSociedadSelected: function (oEvent) {
+                let oSelectedItem = oEvent.getParameter("selectedItem");
+                let oInput = oEvent.getSource();
+
+                if (oSelectedItem && oInput) {
+                    let sValue = oSelectedItem.getAdditionalText(); // Parnr
+
+                    // Obtener el path del modelo donde está bindeado el Input
+                    let sPath = oInput.getBinding("value")?.getPath();
+
+                    if (sPath) {
+                        this.getView().getModel("requestModel").setProperty(sPath, sValue);
+                    }
+
+                    // Visualmente también lo puedes actualizar por si no refresca
+                    oInput.setValue(sValue);
+                }
+            }
 
 
 

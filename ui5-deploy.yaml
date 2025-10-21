@@ -20,7 +20,7 @@ builder:
           name: ZMM_PTPLAYOUTS
           description: RICEFW 4314 Layouts
           package: Z_FIORI_LAYOUTS
-          transport: DS4K908761
+          transport: DS4K921036
         exclude:
           - /test/
 

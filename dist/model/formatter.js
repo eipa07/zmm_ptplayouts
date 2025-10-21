@@ -1,0 +1,2 @@
+sap.ui.define([],function(){"use strict";return{formatProveedor:function(r,t){const e=r?.trim()||"";const n=t?.trim()||"";if(e&&n){return`${e} - ${n}`}else if(e){return e}else if(n){return n}return""},fallbackText:function(r){return r?.trim()||"Sin dato"},tooltipProveedor:function(r){return r||""}}});
+//# sourceMappingURL=formatter.js.map

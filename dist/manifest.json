@@ -1,0 +1,160 @@
+{
+  "_version": "1.48.0",
+  "sap.app": {
+    "id": "cuprum.zmm_ptplayouts",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "sourceTemplate": {
+      "id": "@sap/generator-fiori:basic",
+      "version": "1.17.4",
+      "toolsId": "baed28d1-01b8-4e5c-90aa-221cbbb3b06c"
+    },
+    "dataSources": {
+      "ZZ1_SB_LAYOUT_EV_VAN": {
+        "uri": "/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Annotations(TechnicalName='ZZ1_SB_LAYOUT_EV_VAN',Version='0001')/$value/",
+        "type": "ODataAnnotation",
+        "settings": {
+          "localUri": "localService/mainService/ZZ1_SB_LAYOUT_EV_VAN.xml"
+        }
+      },
+      "VE_mainSource": {
+        "uri": "/sap/opu/odata/sap/ZZ1_SB_LAYOUT_EV/",
+        "type": "OData",
+        "settings": {
+          "annotations": [
+            "ZZ1_SB_LAYOUT_EV_VAN"
+          ],
+          "localUri": "localService/mainService/metadata.xml",
+          "odataVersion": "2.0"
+        }
+      },
+      "PT_LayoutSource": {
+        "uri": "/sap/opu/odata/sap/ZZ1_SB_LAYOUT_PT",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "localUri": "localService/metadata.xml",
+          "odataVersion": "2.0",
+          "useBatch": false
+        }
+      },
+      "MP_LayoutSource": {
+        "uri": "/sap/opu/odata/sap/ZZ1_SB_LAYOUT_MP",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "localUri": "localService/metadata.xml",
+          "odataVersion": "2.0",
+          "useBatch": false
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.108.36",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "cuprum.zmm_ptplayouts.i18n.i18n"
+        }
+      },
+      "EV_LayoutService": {
+        "dataSource": "VE_mainSource",
+        "preload": true,
+        "settings": {
+          "useBatch": false
+        }
+      },
+      "PT_LayoutService": {
+        "dataSource": "PT_LayoutSource",
+        "preload": false,
+        "settings": {
+          "useBatch": false
+        }
+      },
+      "MP_LayoutService": {
+        "dataSource": "MP_LayoutSource",
+        "preload": false,
+        "settings": {
+          "useBatch": false
+        }
+      }
+    },
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
+    "routing": {
+      "config": {
+        "routerClass": "sap.m.routing.Router",
+        "viewType": "XML",
+        "async": true,
+        "viewPath": "cuprum.zmm_ptplayouts.view",
+        "controlAggregation": "pages",
+        "controlId": "app",
+        "clearControlAggregation": false
+      },
+      "routes": [
+        {
+          "name": "RouteMain",
+          "pattern": ":?query:",
+          "target": [
+            "TargetMain"
+          ]
+        }
+      ],
+      "targets": {
+        "TargetMain": {
+          "viewType": "XML",
+          "transition": "slide",
+          "clearControlAggregation": false,
+          "viewId": "Main",
+          "viewName": "Main"
+        }
+      }
+    },
+    "rootView": {
+      "viewName": "cuprum.zmm_ptplayouts.view.App",
+      "type": "XML",
+      "async": true,
+      "id": "App"
+    }
+  }
+}

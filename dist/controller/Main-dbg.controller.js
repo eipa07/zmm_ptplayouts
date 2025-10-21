@@ -7,7 +7,7 @@ sap.ui.define([
     "sap/m/MessageBox",
     "sap/ui/core/Fragment",
     "sap/m/MessageToast",
-    "cuprum/zmm_ptplayouts/model/formatter",
+    "cuprum/zmm_ptplayouts/model/formatter"
 ],
 
     /**
@@ -20,9 +20,10 @@ sap.ui.define([
       * @param {typeof sap.m.MessageBox} MessageBox
       * @param {typeof sap.ui.core.Fragment} Fragment
       * @param {sap.m.MessageToast} MessageToast 
+      * 
       */
 
-    function (BaseController, Filter, FilterOperator, JSONModel, Spreadsheet, MessageBox, Fragment, MessageToast, formatter) {
+    function (BaseController, Filter, FilterOperator, JSONModel, Spreadsheet, MessageBox, Fragment, MessageToast, formatter, BusyIndicator) {
         "use strict";
 
         formatter: formatter;
@@ -116,7 +117,7 @@ sap.ui.define([
             }, */
 
             onVHLifnrRequest: function (oEvent) {
-                const oTipoBusqueda = "Proveedor";
+                let oTipoBusqueda = "Proveedor";
 
                 this._loadRemoteOdataServices(_layout, oTipoBusqueda);
 
@@ -513,8 +514,8 @@ sap.ui.define([
             getLayout: async function (_layout, _oModelLayout) {
 
                 this.getView().setBusy(true);
-                const _that = this;
-                const _params = this.getUrlFilters(_layout);
+                let _that = this;
+                let _params = this.getUrlFilters(_layout);
 
                 let aResults = [];
 
@@ -524,7 +525,7 @@ sap.ui.define([
                         _oModelLayout.read(sUrlCount, {
                             filters: aFilters,
                             success: function (_count, response) {
-                                const iTotal = parseInt(_count);
+                                let iTotal = parseInt(_count);
                                 resolve(iTotal);
                             },
                             error: reject
@@ -535,7 +536,7 @@ sap.ui.define([
                 // 2. Cargar datos usando una URL específica (puede ser la original o la que devuelve __next)
                 async function loadData(sUrl, aFilters, bFirstCall = false, iTop = 5000) {
                     return new Promise((resolve, reject) => {
-                        const oReadConfig = {
+                        let oReadConfig = {
                             success: resolve,
                             error: reject
                         };
@@ -555,17 +556,17 @@ sap.ui.define([
                 try {
                     let sUrl = _params[0].url;
                     let sUrlCount = _params[0].urlCount;
-                    const aFilters = _params[0].filters;
+                    let aFilters = _params[0].filters;
 
                     // 3. Obtener total de registros
-                    const iTotal = await getCount(sUrlCount, aFilters);
+                    let iTotal = await getCount(sUrlCount, aFilters);
 
                     let hasMore = true;
                     let bFirstCall = true;
 
                     // 4. Loop de paginación
                     while (hasMore) {
-                        const oData = await loadData(sUrl, aFilters, bFirstCall, iTotal);
+                        let oData = await loadData(sUrl, aFilters, bFirstCall, iTotal);
                         bFirstCall = false;
 
                         aResults = aResults.concat(oData.results || []);
@@ -574,8 +575,8 @@ sap.ui.define([
                             console.log("Next URL:", oData.__next);
 
                             // Asegura que la URL sea relativa y correcta
-                            const sNextQuery = oData.__next.split("/Set?")[1];
-                            const sBaseUrl = "/ZZ1_CDS_LAYOUT_EV(p_fecha='" + _params[0].fecha + "')/Set?" + sNextQuery;
+                            let sNextQuery = oData.__next.split("/Set?")[1];
+                            let sBaseUrl = "/ZZ1_CDS_LAYOUT_EV(p_fecha='" + _params[0].fecha + "')/Set?" + sNextQuery;
                             sUrl = sBaseUrl;
                         } else {
                             hasMore = false;
@@ -583,7 +584,7 @@ sap.ui.define([
                     }
 
                     // 5. Mostrar resultados si hay
-                    const oModel = new sap.ui.model.json.JSONModel();
+                    let oModel = new sap.ui.model.json.JSONModel();
                     oModel.setData(aResults);
                     console.log(aResults);
 
@@ -605,10 +606,10 @@ sap.ui.define([
 
                 } catch (oError) {
                     console.log("Error al cargar el layout:", oError);
-                    const oBundle = this.get_Resource_Bundle();
+                    let oBundle = this.get_Resource_Bundle();
                     let _msgerrorCargaLayout = oBundle.getText("sinResultados");
                     MessageBox.error(_msgerrorCargaLayout);
-                } finally{
+                } finally {
                     this.getView().setBusy(false);
                 }
             },
@@ -716,21 +717,29 @@ sap.ui.define([
 
 
             /**
-             * Call oData Services for PT and Virtual Layouts
-             * c_mp => MP
-             * c_pt => PT
-             * Carga de entidades para filtros
-             */
+ * Carga remota de datos desde un servicio OData, usando paginación manual
+ * basada en bloques de 5000 registros usando $skip y $top.
+ * Especialmente útil cuando el backend no maneja correctamente __next.
+ *
+ * @param {string} _layout - Categoría del layout seleccionado (ej. c_virtual)
+ * @param {string} tipoBusqueda - (opcional) Identificador de tipo de búsqueda
+ */
             _loadRemoteOdataServices: async function (_layout, tipoBusqueda = '') {
+                let oRequestModel = this.getView().getModel("requestModel");
+                oRequestModel.setProperty("/Global/isBusyVH", true);
+                let that = this;
 
-                debugger;
-
-                async function getCount(sUrlCount, oModel, _layout) {
+                /**
+                 * Llama al endpoint $count para obtener el total de registros disponibles
+                 * @param {string} sUrlCount - Ruta relativa al servicio OData para contar registros
+                 * @param {sap.ui.model.odata.v2.ODataModel} oModel - Modelo OData v2 conectado al backend
+                 * @returns {Promise<number>} - Total de registros disponibles
+                 */
+                async function getCount(sUrlCount, oModel) {
                     return new Promise((resolve, reject) => {
                         oModel.read(sUrlCount, {
-                            success: function (_count, response) {
-                                console.log("Response de count ", response);
-                                const iTotal = parseInt(_count);
+                            success: function (_count) {
+                                let iTotal = parseInt(_count);
                                 resolve(iTotal);
                             },
                             error: reject
@@ -738,378 +747,226 @@ sap.ui.define([
                     });
                 }
 
-                // 2. Cargar datos usando una URL específica (puede ser la original o la que devuelve __next)
-                async function loadData(sUrl, bFirstCall = false, iTop = 5000, oModel) {
+                /**
+                 * Carga un bloque específico de datos usando $skip y $top
+                 * @param {number} iSkip - Offset de inicio
+                 * @param {number} iTop - Cantidad de registros a recuperar
+                 * @param {sap.ui.model.odata.v2.ODataModel} oModel - Modelo OData
+                 * @param {string} sEntitySet - Entidad base del servicio
+                 * @returns {Promise<Object>} - Respuesta del backend con propiedad `results`
+                 * /ZZ1_CDS_SEARCH_HELP_PARNR?$top=5000&$skip=0  
+                 * /ZZ1_CDS_SEARCH_HELP_PARNR?$top=5000&$skip=5000  
+                 * /ZZ1_CDS_SEARCH_HELP_PARNR?$top=5000&$skip=10000  
+                 * ... hasta llegar a oCount
+                 * 
+                 */
+                async function loadData(iSkip, iTop, oModel, sEntitySet) {
                     return new Promise((resolve, reject) => {
-                        const oReadConfig = {
+                        oModel.read(sEntitySet, {
+                            urlParameters: {
+                                "$top": iTop,
+                                "$skip": iSkip
+                            },
                             success: resolve,
                             error: reject
-                        };
-
-                        // Solo usar filtros y $top en la primera llamada
-                        if (bFirstCall) {
-                            oReadConfig.urlParameters = {
-                                "$top": iTop
-                            };
-                        }
-
-                        oModel.read(sUrl, oReadConfig);
+                        });
                     });
                 }
 
-                //this.getLayout(_layout);
+                // Acumulador de resultados
                 let aResults = [];
-                var _that = this;
-                //var _Virtual_ModelService = this.getView().getModel("Virtual_LayoutModel");
+                let _that = this;
 
-
+                // Solo aplica para layout virtual (puedes extender a c_pt, c_mp si deseas)
                 if (_layout === c_virtual) {
                     try {
+                        oRequestModel.setProperty("/Global/isBusyVH", true);
+                        // Si el modelo aún no ha sido cargado, procedemos
                         if (!this.getView().getModel("materialModel_ev")) {
-                            debugger;
-                            let oEntity = '/ZZ1_CDS_SEARCH_HELP_PARNR/';
+
+                            // Ruta base al EntitySet
+                            let sEntitySet = "/ZZ1_CDS_SEARCH_HELP_PARNR";
                             let oEV_Model = this.getView().getModel("EV_LayoutService");
 
-                            let sUrlCount = oEntity + "$count?";
+                            // Paso 1: Obtener la cantidad total de registros disponibles
+                            let sUrlCount = sEntitySet + "/$count";
+                            let oCount = await getCount(sUrlCount, oEV_Model);
 
-                            // 3. Obtener total de registros
-                            let oCount = await getCount(sUrlCount, oEV_Model, _layout);
-                            console.log("Contador de material EV : " + oCount);
-                            let that = this;
+                            // Tamaño de bloque por llamada ($top)
+                            let iBlockSize = 5000;
 
+                            console.log("Total de registros a cargar:", oCount);
 
+                            // Paso 2: Cargar los registros en bloques usando $skip/$top
+                            for (let i = 0; i < oCount; i += iBlockSize) {
+                                console.log(`Cargando registros desde ${i} hasta ${Math.min(i + iBlockSize, oCount)}...`);
 
-
-
-                            let hasMore = true;
-                            let bFirstCall = true;
-                            let sUrl = oEntity;
-
-                            // 4. Loop de paginación
-                            while (hasMore) {
-                                let oData = await loadData(sUrl, bFirstCall, oCount, oEV_Model);
-                                bFirstCall = false;
-
+                                let oData = await loadData(i, iBlockSize, oEV_Model, sEntitySet);
                                 aResults = aResults.concat(oData.results || []);
-
-                                if (oData.__next) {
-                                    console.log("Next URL:", oData.__next);
-
-                                    // Asegura que la URL sea relativa y correcta
-                                    let sNextQuery = oData.__next.split("/Set?")[1];
-                                    let sBaseUrl = oEntity + "?" + sNextQuery;
-                                    sUrl = sBaseUrl;
-                                } else {
-                                    hasMore = false;
-                                }
                             }
 
-                            // 5. Mostrar resultados si hay
-                            let oModel = new sap.ui.model.json.JSONModel();
-                            oModel.setData(aResults);
-
-
-
+                            // Paso 3: Si hay datos, crear modelo JSON y asignarlo a la vista
                             if (aResults.length > 0) {
+                                let oModel = new sap.ui.model.json.JSONModel();
+                                oModel.setData(aResults);
 
-                                let _oModel = new JSONModel();
-                                _oModel.setData(aResults);
-                                _that.getView().setModel(_oModel, "materialModel_ev");
-                                _that.getView().setModel(_oModel, "materialModel");
-                                console.log("materialModel_ev", that.getView().getModel("materialModel_ev").getData());
+                                _that.getView().setModel(oModel, "materialModel_ev");
+                                _that.getView().setModel(oModel, "materialModel");
 
+                                console.log("materialModel_ev cargado con:", aResults.length, "registros");
                             } else {
+                                // Mostrar advertencia si no se encontraron registros
                                 MessageBox.warning(_msgSinResultados);
                             }
-
-                        } else {
-
-                            let oSociedadModel_mp = that.getView().getModel("materialModel_ev").getData();
-                            let _oModel = new JSONModel();
-                            _oModel.setData(oSociedadModel_mp);
-                            _that.getView().setModel(_oModel, "materialModel");
-
                         }
+
 
                         if (!this.getView().getModel("sociedadModel_ev")) {
 
-                            aResults = [];
-                            let oEntity = '/ZZ1_CDS_SEARCH_HELP_BUKRS/';
+                            // Ruta base al EntitySet
+                            let sEntitySet = "/ZZ1_CDS_SEARCH_HELP_BUKRS";
                             let oEV_Model = this.getView().getModel("EV_LayoutService");
 
-                            let sUrlCount = oEntity + "$count?";
+                            // Paso 1: Obtener la cantidad total de registros disponibles
+                            let sUrlCount = sEntitySet + "/$count";
+                            let oCount = await getCount(sUrlCount, oEV_Model);
 
-                            let oCount = await getCount(sUrlCount, oEV_Model, _layout);
+                            // Tamaño de bloque por llamada ($top)
+                            let iBlockSize = 5000;
 
-                            let that = this;
+                            console.log("Total de registros a cargar:", oCount);
 
+                            // Paso 2: Cargar los registros en bloques usando $skip/$top
+                            for (let i = 0; i < oCount; i += iBlockSize) {
+                                console.log(`Cargando registros desde ${i} hasta ${Math.min(i + iBlockSize, oCount)}...`);
 
-                            // 3. Obtener total de registros
-
-
-                            let hasMore = true;
-                            let bFirstCall = true;
-                            let sUrl = oEntity;
-
-                            // 4. Loop de paginación
-                            while (hasMore) {
-                                let oData = await loadData(sUrl, bFirstCall, oCount, oEV_Model);
-                                bFirstCall = false;
-
+                                let oData = await loadData(i, iBlockSize, oEV_Model, sEntitySet);
                                 aResults = aResults.concat(oData.results || []);
-
-                                if (oData.__next) {
-                                    console.log("Next URL:", oData.__next);
-
-                                    // Asegura que la URL sea relativa y correcta
-                                    let sNextQuery = oData.__next.split("/Set?")[1];
-                                    let sBaseUrl = oEntity + "?" + sNextQuery;
-                                    sUrl = sBaseUrl;
-                                } else {
-                                    hasMore = false;
-                                }
                             }
 
-                            // 5. Mostrar resultados si hay
-                            let oModel = new sap.ui.model.json.JSONModel();
-                            oModel.setData(aResults);
-
-
-
+                            // Paso 3: Si hay datos, crear modelo JSON y asignarlo a la vista
                             if (aResults.length > 0) {
+                                let oModel = new sap.ui.model.json.JSONModel();
+                                oModel.setData(aResults);
 
-                                let _oModel = new JSONModel();
-                                _oModel.setData(aResults);
-                                _that.getView().setModel(_oModel, "sociedadModel_ev");
-                                _that.getView().setModel(_oModel, "sociedadModel");
-                                console.log("sociedadModel_ev", that.getView().getModel("sociedadModel_ev").getData());
+                                _that.getView().setModel(oModel, "sociedadModel_ev");
+                                _that.getView().setModel(oModel, "sociedadModel");
 
+                                console.log("sociedadModel_ev cargado con:", aResults.length, "registros");
                             } else {
+                                // Mostrar advertencia si no se encontraron registros
                                 MessageBox.warning(_msgSinResultados);
                             }
-
-                        } else {
-
-                            let oSociedadModel_mp = that.getView().getModel("sociedadModel_ev").getData();
-                            let _oModel = new JSONModel();
-                            _oModel.setData(oSociedadModel_mp);
-                            _that.getView().setModel(_oModel, "sociedadModel");
-
                         }
 
 
 
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", false);
 
 
                     } catch (error) {
-                        //console.log("Error Contador de material EV : ", error);
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", false);
+                        // Captura y muestra errores de lectura
+                        console.error("Error al cargar datos remotos:", error);
+                        MessageBox.error("Error cargando datos del backend EV.");
                     }
-
-
-
-
-
-
-
 
 
                 } else if (_layout === c_mp) {
-                    /** MP Layout */
 
-                    /*  var _MP_ModelService = this.getView().getModel("MP_LayoutService");
-                     let oCont = this.getCount(_layout, oModel, entity);
- 
-                     if (!this.getView().getModel("numParte_MP_Model")) {
-                         _MP_ModelService.read("/ZZ1_CDS_SEARCH_HELP_PARNR/?", {
-                             success: function (oData, Result) {
- 
-                                 if (oData.results.length >= 1) {
-                                     console.log(oData);
-                                     let _oModel = new JSONModel();
-                                     _oModel.setData(oData.results);
-                                     _that.getView().setModel(_oModel, "numParte_MP_Model");
-                                 } else {
-                                     MessageBox.warning("No se encontraron resultados");
-                                 }
- 
- 
-                             }, error: function (oError) {
-                                 console.log(oError);
-                             }
-                         });
-                     } */
-
-
-
-                    /*  if (!this.getView().getModel("lifnr_MP_Model")) {
-                         _MP_ModelService.read("/ZZ1_CDS_SEARCH_HELP_LIFNR/?", {
-                             success: function (oData, Result) {
- 
-                                 console.log(oData);
-                                 let _oModel = new JSONModel();
-                                 _oModel.setData(oData.results);
-                                 _that.getView().setModel(_oModel, "lifnr_MP_Model"); // Proveedor MP
- 
-                             }, error: function (oError) {
-                                 console.log(oError);
-                             }
-                         });
-                     } */
 
                     try {
+                        oRequestModel.setProperty("/Global/isBusyVH", true);
+                        // Si el modelo aún no ha sido cargado, procedemos
                         if (!this.getView().getModel("proveedorlModel_mp")) {
 
+                            // Ruta base al EntitySet
+                            let sEntitySet = "/ZZ1_CDS_SEARCH_HELP_LIFNR";
+                            let oEV_Model = this.getView().getModel("MP_LayoutService");
 
-                            let oEntity = '/ZZ1_CDS_SEARCH_HELP_LIFNR/';
-                            let oMP_Model = this.getView().getModel("PT_LayoutService");
-                            let sUrlCount = oEntity + "$count?";
+                            // Paso 1: Obtener la cantidad total de registros disponibles
+                            let sUrlCount = sEntitySet + "/$count";
+                            let oCount = await getCount(sUrlCount, oEV_Model);
 
-                            // 3. Obtener total de registros
-                            let oCount = await getCount(sUrlCount, oMP_Model, _layout);
+                            // Tamaño de bloque por llamada ($top)
+                            let iBlockSize = 5000;
 
+                            console.log("Total de registros a cargar:", oCount);
 
-                            let that = this;
-                            let hasMore = true;
-                            let bFirstCall = true;
-                            let sUrl = oEntity;
+                            // Paso 2: Cargar los registros en bloques usando $skip/$top
+                            for (let i = 0; i < oCount; i += iBlockSize) {
+                                console.log(`Cargando registros desde ${i} hasta ${Math.min(i + iBlockSize, oCount)}...`);
 
-                            // 4. Loop de paginación
-                            while (hasMore) {
-                                let oData = await loadData(sUrl, bFirstCall, oCount, oMP_Model);
-                                bFirstCall = false;
-
+                                let oData = await loadData(i, iBlockSize, oEV_Model, sEntitySet);
                                 aResults = aResults.concat(oData.results || []);
-
-                                if (oData.__next) {
-                                    console.log("Next URL:", oData.__next);
-
-                                    // Asegura que la URL sea relativa y correcta
-                                    let sNextQuery = oData.__next.split("/Set?")[1];
-                                    let sBaseUrl = oEntity + "?" + sNextQuery;
-                                    sUrl = sBaseUrl;
-                                } else {
-                                    hasMore = false;
-                                }
                             }
 
-                            // 5. Mostrar resultados si hay
-                            let oModel = new sap.ui.model.json.JSONModel();
-                            oModel.setData(aResults);
-
-
-
+                            // Paso 3: Si hay datos, crear modelo JSON y asignarlo a la vista
                             if (aResults.length > 0) {
+                                let oModel = new sap.ui.model.json.JSONModel();
+                                oModel.setData(aResults);
 
-                                let _oModel = new JSONModel();
-                                _oModel.setData(aResults);
-                                _that.getView().setModel(_oModel, "proveedorlModel_mp");
-                                _that.getView().setModel(_oModel, "proveedorlModel");
-                                console.log("proveedorlModel_mp", that.getView().getModel("proveedorlModel_mp").getData());
+                                _that.getView().setModel(oModel, "proveedorlModel_mp");
+                                _that.getView().setModel(oModel, "proveedorlModel");
 
+                                console.log("proveedorlModel_mp cargado con:", aResults.length, "registros");
                             } else {
+                                // Mostrar advertencia si no se encontraron registros
                                 MessageBox.warning(_msgSinResultados);
                             }
-
-                        } else {
-
-                            let oSociedadModel_mp = that.getView().getModel("proveedorlModel_mp").getData();
-                            let _oModel = new JSONModel();
-                            _oModel.setData(oSociedadModel_mp);
-                            _that.getView().setModel(_oModel, "proveedorlModel");
-
                         }
+
 
                         if (!this.getView().getModel("sociedadModel_mp")) {
 
-                            aResults = [];
-                            let oEntity = '/ZZ1_CDS_SEARCH_HELP_BUKRS/';
+                            // Ruta base al EntitySet
+                            let sEntitySet = "/ZZ1_CDS_SEARCH_HELP_BUKRS";
                             let oEV_Model = this.getView().getModel("MP_LayoutService");
-                            let sUrlCount = oEntity + "$count?";
 
-                            // 3. Obtener total de registros
-                            let oCount = await getCount(sUrlCount, oEV_Model, _layout);
-                            let that = this;
-                            let hasMore = true;
-                            let bFirstCall = true;
-                            let sUrl = oEntity;
+                            // Paso 1: Obtener la cantidad total de registros disponibles
+                            let sUrlCount = sEntitySet + "/$count";
+                            let oCount = await getCount(sUrlCount, oEV_Model);
 
-                            // 4. Loop de paginación
-                            while (hasMore) {
-                                let oData = await loadData(sUrl, bFirstCall, oCount, oEV_Model);
-                                bFirstCall = false;
+                            // Tamaño de bloque por llamada ($top)
+                            let iBlockSize = 5000;
 
+                            console.log("Total de registros a cargar:", oCount);
+
+                            // Paso 2: Cargar los registros en bloques usando $skip/$top
+                            for (let i = 0; i < oCount; i += iBlockSize) {
+                                console.log(`Cargando registros desde ${i} hasta ${Math.min(i + iBlockSize, oCount)}...`);
+
+                                let oData = await loadData(i, iBlockSize, oEV_Model, sEntitySet);
                                 aResults = aResults.concat(oData.results || []);
-
-                                if (oData.__next) {
-                                    console.log("Next URL:", oData.__next);
-
-                                    // Asegura que la URL sea relativa y correcta
-                                    let sNextQuery = oData.__next.split("/Set?")[1];
-                                    let sBaseUrl = oEntity + "?" + sNextQuery;
-                                    sUrl = sBaseUrl;
-                                } else {
-                                    hasMore = false;
-                                }
                             }
 
-                            // 5. Mostrar resultados si hay
-                            let oModel = new sap.ui.model.json.JSONModel();
-                            oModel.setData(aResults);
-
-
-
+                            // Paso 3: Si hay datos, crear modelo JSON y asignarlo a la vista
                             if (aResults.length > 0) {
+                                let oModel = new sap.ui.model.json.JSONModel();
+                                oModel.setData(aResults);
 
-                                let _oModel = new JSONModel();
-                                _oModel.setData(aResults);
-                                _that.getView().setModel(_oModel, "sociedadModel_mp");
-                                _that.getView().setModel(_oModel, "sociedadModel");
-                                console.log("sociedadModel_mp", that.getView().getModel("sociedadModel_mp").getData());
+                                _that.getView().setModel(oModel, "sociedadModel_mp");
+                                _that.getView().setModel(oModel, "sociedadModel");
 
+                                console.log("sociedadModel_mp cargado con:", aResults.length, "registros");
                             } else {
+                                // Mostrar advertencia si no se encontraron registros
                                 MessageBox.warning(_msgSinResultados);
                             }
-
-                        } else {
-                            let oSociedadModel_mp = that.getView().getModel("sociedadModel_mp").getData();
-                            let _oModel = new JSONModel();
-                            _oModel.setData(oSociedadModel_mp);
-                            _that.getView().setModel(_oModel, "sociedadModel");
                         }
 
-
-
-
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", false);
 
                     } catch (error) {
-                        //console.log("Error Contador de material EV : ", error);
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", false);
+                        // Captura y muestra errores de lectura
+                        console.error("Error al cargar datos remotos:", error);
+                        MessageBox.error("Error cargando datos del backend MP.");
                     }
-
-
-
-
-
-
-
-
-                    /* if (!this.getView().getModel("bukrs_MP_Model")) {
-                        _MP_ModelService.read("/ZZ1_CDS_SEARCH_HELP_BUKRS/?", {
-                            success: function (oData, Result) {
-
-                                console.log(oData);
-                                let _oModel = new JSONModel();
-                                _oModel.setData(oData.results);
-                                _that.getView().setModel(_oModel, "bukrs_MP_Model");
-
-                            }, error: function (oError) {
-                                console.log(oError);
-                            }
-                        });
-                    } */
-
-
-
-
 
 
 
@@ -1117,162 +974,100 @@ sap.ui.define([
                 } else if (_layout === c_pt) {
 
 
-                    /* var _PT_ModelService = this.getView().getModel("PT_LayoutService");
-
-                    if (!this.getView().getModel("bukrs_PT_Model")) {
-                        _PT_ModelService.read("/ZZ1_CDS_SEARCH_HELP_BUKRS/?", {
-                            success: function (oData, Result) {
-
-                                console.log(oData);
-                                let _oModel = new JSONModel();
-                                _oModel.setData(oData.results);
-                                _that.getView().setModel(_oModel, "bukrs_PT_Model");
-
-                            }, error: function (oError) {
-                                console.log(oError);
-                            }
-                        });
-                    }
-
-                    
- */
-
                     try {
+                        oRequestModel.setProperty("/Global/isBusyVH", true);
+                        // Si el modelo aún no ha sido cargado, procedemos
                         if (!this.getView().getModel("materialModel_pt")) {
-                            let oEntity = '/ZZ1_CDS_SEARCH_HELP_PARNR/';
-                            let oEV_Model = this.getView().getModel("EV_LayoutService");
 
-                            let sUrlCount = oEntity + "$count?";
+                            // Ruta base al EntitySet
+                            let sEntitySet = "/ZZ1_CDS_SEARCH_HELP_PARNR";
+                            let oEV_Model = this.getView().getModel("PT_LayoutService");
 
-                            // 3. Obtener total de registros
-                            let oCount = await getCount(sUrlCount, oEV_Model, _layout);
-                            console.log("Contador de material EV : " + oCount);
-                            let that = this;
+                            // Paso 1: Obtener la cantidad total de registros disponibles
+                            let sUrlCount = sEntitySet + "/$count";
+                            let oCount = await getCount(sUrlCount, oEV_Model);
 
+                            // Tamaño de bloque por llamada ($top)
+                            let iBlockSize = 5000;
 
+                            console.log("Total de registros a cargar:", oCount);
 
+                            // Paso 2: Cargar los registros en bloques usando $skip/$top
+                            for (let i = 0; i < oCount; i += iBlockSize) {
+                                console.log(`Cargando registros desde ${i} hasta ${Math.min(i + iBlockSize, oCount)}...`);
 
-
-                            let hasMore = true;
-                            let bFirstCall = true;
-                            let sUrl = oEntity;
-
-                            // 4. Loop de paginación
-                            while (hasMore) {
-                                let oData = await loadData(sUrl, bFirstCall, oCount, oEV_Model);
-                                bFirstCall = false;
-
+                                let oData = await loadData(i, iBlockSize, oEV_Model, sEntitySet);
                                 aResults = aResults.concat(oData.results || []);
-
-                                if (oData.__next) {
-                                    console.log("Next URL:", oData.__next);
-
-                                    // Asegura que la URL sea relativa y correcta
-                                    let sNextQuery = oData.__next.split("/Set?")[1];
-                                    let sBaseUrl = oEntity + "?" + sNextQuery;
-                                    sUrl = sBaseUrl;
-                                } else {
-                                    hasMore = false;
-                                }
                             }
 
-                            // 5. Mostrar resultados si hay
-                            let oModel = new sap.ui.model.json.JSONModel();
-                            oModel.setData(aResults);
-
-
-
+                            // Paso 3: Si hay datos, crear modelo JSON y asignarlo a la vista
                             if (aResults.length > 0) {
+                                let oModel = new sap.ui.model.json.JSONModel();
+                                oModel.setData(aResults);
 
-                                let _oModel = new JSONModel();
-                                _oModel.setData(aResults);
-                                _that.getView().setModel(_oModel, "materialModel_pt");
-                                _that.getView().setModel(_oModel, "materialModel");
-                                console.log("materialModel_pt", that.getView().getModel("materialModel_pt").getData());
+                                _that.getView().setModel(oModel, "materialModel_pt");
+                                _that.getView().setModel(oModel, "materialModel");
 
+                                console.log("materialModel_pt cargado con:", aResults.length, "registros");
                             } else {
+                                // Mostrar advertencia si no se encontraron registros
                                 MessageBox.warning(_msgSinResultados);
                             }
-
-                        } else {
-
-                            let oSociedadModel_mp = that.getView().getModel("materialModel_pt").getData();
-                            let _oModel = new JSONModel();
-                            _oModel.setData(oSociedadModel_mp);
-                            _that.getView().setModel(_oModel, "materialModel");
-
                         }
+
 
                         if (!this.getView().getModel("sociedadModel_pt")) {
 
-                            aResults = [];
-                            let oEntity = '/ZZ1_CDS_SEARCH_HELP_BUKRS/';
+                            // Ruta base al EntitySet
+                            let sEntitySet = "/ZZ1_CDS_SEARCH_HELP_BUKRS";
                             let oEV_Model = this.getView().getModel("PT_LayoutService");
 
-                            let sUrlCount = oEntity + "$count?";
+                            // Paso 1: Obtener la cantidad total de registros disponibles
+                            let sUrlCount = sEntitySet + "/$count";
+                            let oCount = await getCount(sUrlCount, oEV_Model);
 
-                            let oCount = await getCount(sUrlCount, oEV_Model, _layout);
+                            // Tamaño de bloque por llamada ($top)
+                            let iBlockSize = 5000;
 
-                            let that = this;
+                            console.log("Total de registros a cargar:", oCount);
 
+                            // Paso 2: Cargar los registros en bloques usando $skip/$top
+                            for (let i = 0; i < oCount; i += iBlockSize) {
+                                console.log(`Cargando registros desde ${i} hasta ${Math.min(i + iBlockSize, oCount)}...`);
 
-                            // 3. Obtener total de registros
-
-
-                            let hasMore = true;
-                            let bFirstCall = true;
-                            let sUrl = oEntity;
-
-                            // 4. Loop de paginación
-                            while (hasMore) {
-                                let oData = await loadData(sUrl, bFirstCall, oCount, oEV_Model);
-                                bFirstCall = false;
-
+                                let oData = await loadData(i, iBlockSize, oEV_Model, sEntitySet);
                                 aResults = aResults.concat(oData.results || []);
-
-                                if (oData.__next) {
-                                    console.log("Next URL:", oData.__next);
-
-                                    // Asegura que la URL sea relativa y correcta
-                                    let sNextQuery = oData.__next.split("/Set?")[1];
-                                    let sBaseUrl = oEntity + "?" + sNextQuery;
-                                    sUrl = sBaseUrl;
-                                } else {
-                                    hasMore = false;
-                                }
                             }
 
-                            // 5. Mostrar resultados si hay
-                            let oModel = new sap.ui.model.json.JSONModel();
-                            oModel.setData(aResults);
-
-
-
+                            // Paso 3: Si hay datos, crear modelo JSON y asignarlo a la vista
                             if (aResults.length > 0) {
+                                let oModel = new sap.ui.model.json.JSONModel();
+                                oModel.setData(aResults);
 
-                                let _oModel = new JSONModel();
-                                _oModel.setData(aResults);
-                                _that.getView().setModel(_oModel, "sociedadModel_pt");
-                                _that.getView().setModel(_oModel, "sociedadModel");
-                                console.log("sociedadModel_ev", that.getView().getModel("sociedadModel_pt").getData());
+                                _that.getView().setModel(oModel, "sociedadModel_pt");
+                                _that.getView().setModel(oModel, "sociedadModel");
 
+                                console.log("sociedadModel_pt cargado con:", aResults.length, "registros");
                             } else {
+                                // Mostrar advertencia si no se encontraron registros
                                 MessageBox.warning(_msgSinResultados);
                             }
-
-                        } else {
-
-                            let oSociedadModel_mp = that.getView().getModel("sociedadModel_pt").getData();
-                            let _oModel = new JSONModel();
-                            _oModel.setData(oSociedadModel_mp);
-                            _that.getView().setModel(_oModel, "sociedadModel");
-
                         }
-                    } catch (error) {
-                        //console.log("Error Contador de material EV : ", error);
-                    }
-                }
 
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", fasle);
+
+                    } catch (error) {
+                        // Captura y muestra errores de lectura
+                        //this.hideBusy(); // Ocultar Busy
+                        oRequestModel.setProperty("/Global/isBusyVH", false);
+                        console.error("Error al cargar datos remotos:", error);
+                        MessageBox.error("Error cargando datos del backend PT.");
+                    }
+
+
+
+                }
             },
 
 
@@ -1356,8 +1151,8 @@ sap.ui.define([
             },
 
             clearAllFilters: function (_tableID) {
-                const oTable = this.byId(_tableID);
-                const aColumns = oTable.getColumns();
+                let oTable = this.byId(_tableID);
+                let aColumns = oTable.getColumns();
                 for (let i = 0; i < aColumns.length; i++) {
                     oTable.filter(aColumns[i], null);
                 }
@@ -1489,7 +1284,9 @@ sap.ui.define([
                 });
             },
 
-            onVH_Sociedad_request(oEvent) {
+            /* onVH_Sociedad_request(oEvent) {
+
+                
 
                 this._loadRemoteOdataServices(_layout);
                 console.log("onVH_material_request");
@@ -1506,7 +1303,50 @@ sap.ui.define([
                     oDialog.open();
                 });
 
+            }, */
+
+            onVH_Sociedad_request: function (oEvent) {
+                let oView = this.getView();
+                let oBundle = this.get_Resource_Bundle();
+                let oModel = oView.getModel("requestModel");
+
+                try {
+                    // Marcar el ValueHelp como ocupado (bloquea el diálogo)
+                    oModel.setProperty("/Global/isBusyVH", true);
+                    console.log("[INFO] Abriendo ValueHelp de Sociedad...");
+
+                    this._loadRemoteOdataServices(_layout);
+
+                    if (!this._oVH_sociedad_Dialog) {
+                        this._oVH_sociedad_Dialog = Fragment.load({
+                            name: "cuprum.zmm_ptplayouts.view.fragments.SociedadSelectionDialog",
+                            controller: this
+                        }).then(function (oDialog) {
+                            oView.addDependent(oDialog);
+                            return oDialog;
+                        });
+                    }
+
+                    this._oVH_sociedad_Dialog.then(function (oDialog) {
+                        oDialog.open();
+
+                        // Simular carga o cuando termine el backend
+                        /* setTimeout(() => {
+                            oModel.setProperty("/Global/isBusyVH", false);
+                            console.log("[INFO] ValueHelp abierto correctamente.");
+                        }, 800); */
+                    }).catch(function (oError) {
+                        oModel.setProperty("/Global/isBusyVH", false);
+                        console.error("[ERROR] ValueHelp:", oError);
+                        sap.m.MessageBox.error(oBundle.getText("error.cargar_fragmento"));
+                    });
+
+                } catch (oError) {
+                    oModel.setProperty("/Global/isBusyVH", false);
+                    sap.m.MessageBox.error(oBundle.getText("error.proceso_general"));
+                }
             },
+
 
             onClose_VH_Sociedad() {
                 var that = this;
@@ -1527,17 +1367,17 @@ sap.ui.define([
             },
 
             onSuggestMaterial: function (oEvent) {
-                const sTerm = oEvent.getParameter("suggestValue").toLowerCase();
-                const oInput = oEvent.getSource();
-                const oBinding = oInput.getBinding("suggestionItems");
+                let sTerm = oEvent.getParameter("suggestValue").toLowerCase();
+                let oInput = oEvent.getSource();
+                let oBinding = oInput.getBinding("suggestionItems");
 
                 if (oBinding) {
-                    const oFilter = new sap.ui.model.Filter({
+                    let oFilter = new sap.ui.model.Filter({
                         filters: [
                             new sap.ui.model.Filter("Parnr", sap.ui.model.FilterOperator.Contains, sTerm),
                             new sap.ui.model.Filter("ParnrDescription", sap.ui.model.FilterOperator.Contains, sTerm)
                         ],
-                        and: false // <- Muy importante: hace un OR entre filtros
+                        and: false
                     });
 
                     oBinding.filter([oFilter]);
@@ -1545,17 +1385,17 @@ sap.ui.define([
             },
 
             onSuggestSociedad: function (oEvent) {
-                const sTerm = oEvent.getParameter("suggestValue").toLowerCase();
-                const oInput = oEvent.getSource();
-                const oBinding = oInput.getBinding("suggestionItems");
+                let sTerm = oEvent.getParameter("suggestValue").toLowerCase();
+                let oInput = oEvent.getSource();
+                let oBinding = oInput.getBinding("suggestionItems");
 
                 if (oBinding) {
-                    const oFilter = new sap.ui.model.Filter({
+                    let oFilter = new sap.ui.model.Filter({
                         filters: [
                             new sap.ui.model.Filter("bukrs", sap.ui.model.FilterOperator.Contains, sTerm),
                             new sap.ui.model.Filter("butxt", sap.ui.model.FilterOperator.Contains, sTerm)
                         ],
-                        and: false // <- Muy importante: hace un OR entre filtros
+                        and: false
                     });
 
                     oBinding.filter([oFilter]);
@@ -1563,17 +1403,17 @@ sap.ui.define([
             },
 
             onSuggestProveedor: function (oEvent) {
-                const sTerm = oEvent.getParameter("suggestValue").toLowerCase();
-                const oInput = oEvent.getSource();
-                const oBinding = oInput.getBinding("suggestionItems");
+                let sTerm = oEvent.getParameter("suggestValue").toLowerCase();
+                let oInput = oEvent.getSource();
+                let oBinding = oInput.getBinding("suggestionItems");
 
                 if (oBinding) {
-                    const oFilter = new sap.ui.model.Filter({
+                    let oFilter = new sap.ui.model.Filter({
                         filters: [
                             new sap.ui.model.Filter("Lifnr", sap.ui.model.FilterOperator.Contains, sTerm),
                             new sap.ui.model.Filter("LifnrName", sap.ui.model.FilterOperator.Contains, sTerm)
                         ],
-                        and: false // <- Muy importante: hace un OR entre filtros
+                        and: false
                     });
 
                     oBinding.filter([oFilter]);
@@ -1582,14 +1422,14 @@ sap.ui.define([
 
 
             onMaterialSelected: function (oEvent) {
-                const oSelectedItem = oEvent.getParameter("selectedItem");
-                const oInput = oEvent.getSource();
+                let oSelectedItem = oEvent.getParameter("selectedItem");
+                let oInput = oEvent.getSource();
 
                 if (oSelectedItem && oInput) {
-                    const sValue = oSelectedItem.getAdditionalText(); // Parnr
+                    let sValue = oSelectedItem.getAdditionalText(); // Parnr
 
                     // Obtener el path del modelo donde está bindeado el Input
-                    const sPath = oInput.getBinding("value")?.getPath();
+                    let sPath = oInput.getBinding("value")?.getPath();
 
                     if (sPath) {
                         this.getView().getModel("requestModel").setProperty(sPath, sValue);
@@ -1601,14 +1441,14 @@ sap.ui.define([
             },
 
             onSociedadSelected: function (oEvent) {
-                const oSelectedItem = oEvent.getParameter("selectedItem");
-                const oInput = oEvent.getSource();
+                let oSelectedItem = oEvent.getParameter("selectedItem");
+                let oInput = oEvent.getSource();
 
                 if (oSelectedItem && oInput) {
-                    const sValue = oSelectedItem.getAdditionalText(); // Parnr
+                    let sValue = oSelectedItem.getAdditionalText(); // Parnr
 
                     // Obtener el path del modelo donde está bindeado el Input
-                    const sPath = oInput.getBinding("value")?.getPath();
+                    let sPath = oInput.getBinding("value")?.getPath();
 
                     if (sPath) {
                         this.getView().getModel("requestModel").setProperty(sPath, sValue);

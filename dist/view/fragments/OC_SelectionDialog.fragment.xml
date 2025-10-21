@@ -1,0 +1,43 @@
+<core:FragmentDefinition
+    id="EbelnFragment"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+>
+    
+    <Dialog
+        id="vh_Ebeln_Dialog"
+        title="{i18n>buscarRangoOC}"
+        draggable="true"
+        resizable="true"
+        contentWidth="400px">
+
+        <VBox class="sapUiSmallMargin">
+            <Label text="{i18n>OC_inicial}"/>
+            <Input id="oc_inicio_fragment" placeholder="{i18n>OC_inicial}" value="{requestModel>/Virtual/oc_inicio}"/>
+
+            <Label text="{i18n>OC_final}"/>
+            <Input id="oc_fin_fragment" placeholder="{i18n>OC_final}" value="{requestModel>/Virtual/oc_fin}"/>
+
+            
+        </VBox>
+
+       
+
+        <beginButton>
+        <Button
+                text="Incluir en búsqueda"
+                press="includeEbeln"
+                class="sapUiTinyMarginTop"/>
+            
+        </beginButton>
+        <endButton>
+        
+            <Button text="{i18n>fragment.borrarRango}" press="onClose_VH_ebeln"/>
+        </endButton>
+    </Dialog>
+
+
+    <!--
+   
+    -->
+</core:FragmentDefinition>

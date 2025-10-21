@@ -1,0 +1,51 @@
+<core:FragmentDefinition
+    id="ProveedorFragment"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+>
+    
+    <Dialog
+        id="vh_Proveedor_Dialog"
+        title="{i18n>mainview.buscar_proveedor}"
+        draggable="true"
+        resizable="true"
+        contentWidth="50%">
+
+        <VBox class="sapUiSmallMargin">
+            <Label text="{i18n>Material_inicial}"/>
+             <Input
+                                        id="input_sociedad"
+                                        placeholder="{i18n>mainview.buscar_proveedor}"
+                                        showSuggestion="true"
+                                        showValueHelp="false"
+                                        type="Text"
+                                        valueHelpRequest="onVHLifnrRequest"
+                                        submit="onSubmit"
+                                        value="{requestModel>/MP/proveedor}"
+                                        suggest="onSuggestProveedor"
+                                        suggestionItems="{
+                                            path: 'proveedorlModel>/',
+                                            sorter: { path: 'Lifnr' }
+                                        }"
+                                    >
+                                        <suggestionItems>
+                                            <core:ListItem
+                                                text="{proveedorlModel>Lifnr}"
+                                                additionalText="{proveedorlModel>LifnrName}"
+                                            />
+                                        </suggestionItems>
+                                    </Input>
+        </VBox>
+        <beginButton>
+        <Button
+                text="{i18n>fragment.aceptar}"
+                press="includeMaterial"
+                class="sapUiTinyMarginTop"/>
+            
+        </beginButton>
+        <endButton>
+        
+            <Button text="{i18n>fragment.cancelar}" press="onClose_VH_Material"/>
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>
