@@ -30,14 +30,22 @@ sap.ui.define([
 
         return Controller.extend("cuprum.zmm_ptplayouts.BaseController", {
 
+            /**
+             * Define las columnas de Excel EV con las propiedades del servicio.
+             * Conserva el orden historico de Excel: Cliente, Cuprum y Figura.
+             * @returns {object[]} Configuracion de columnas para Spreadsheet.
+             */
             get_VE_layout: function () {
+                // En onInit la vista aun puede no haber heredado los modelos del componente.
+                const oBundle = this.getOwnerComponent().getModel("i18n").getResourceBundle();
+
                 return [
-                    { "label": "Factura", "property": "Vbeln", "width": 10, "type": "String" },
+                    { "label": oBundle.getText("mainview.virtual.invoice"), "property": "Folio", "width": 10, "type": "String" },
                     { "label": "Fecha", "property": "Fecha", "width": 10, "type": "String" },
                     { "label": "Orden Compra", "property": "Ebeln", "width": 10, "type": "String" },
-                    { "label": "Cliente", "property": "Kunnr", "width": 10, "type": "String" },
+                    { "label": oBundle.getText("mainview.virtual.client"), "property": "idnlf", "width": 10, "type": "String" },
                     { "label": "Cuprum", "property": "Parnr", "width": 10, "type": "String" },
-                    { "label": "Figura", "property": "description_parnr", "width": 10, "type": "String" },
+                    { "label": oBundle.getText("mainview.virtual.figure"), "property": "FiguraDesc", "width": 20, "type": "String" },
                     { "label": "Fracción Arancelaria", "property": "ccngn", "width": 10, "type": "String" },
                     //{ "label": "Fracción Arancelaria NICO", "property": "xxxxxxxx", "width": 10, "type": "String" },
                     { "label": "Descripción", "property": "description_parnr", "width": 10, "type": "String" },

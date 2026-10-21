@@ -275,8 +275,8 @@
                                     id="MainView_Column_01"
                                     width="8rem"
                                     hAlign="Center"
-                                    sortProperty="Vbeln"
-                                    filterProperty="Vbeln"
+                                    sortProperty="Folio"
+                                    filterProperty="Folio"
                                     showSortMenuEntry="true"
                                 >
                                     <Label
@@ -287,7 +287,7 @@
                                     <table:template>
                                         <Text
                                             id="MainView_Text_01"
-                                            text="{evLayoutModel>Vbeln}"
+                                            text="{evLayoutModel>Folio}"
                                             wrapping="true"
                                         />
                                     </table:template>
@@ -336,8 +336,8 @@
                                     id="MainView_Column_04"
                                     width="8rem"
                                     hAlign="Center"
-                                    sortProperty="Kunnr"
-                                    filterProperty="Kunnr"
+                                    sortProperty="idnlf"
+                                    filterProperty="idnlf"
                                 >
                                     <Label
                                         id="MainView_Label_04"
@@ -347,7 +347,25 @@
                                     <table:template>
                                         <Text
                                             id="MainView_Text_04"
-                                            text="{evLayoutModel>Kunnr}"
+                                            text="{evLayoutModel>idnlf}"
+                                            wrapping="true"
+                                        />
+                                    </table:template>
+                                </table:Column>
+                                <table:Column
+                                    id="MainView_Column_Figura"
+                                    width="12rem"
+                                    hAlign="Center"
+                                    sortProperty="FiguraDesc"
+                                    filterProperty="FiguraDesc"
+                                >
+                                    <Label
+                                        text="{i18n>mainview.virtual.figure}"
+                                        wrapping="true"
+                                    />
+                                    <table:template>
+                                        <Text
+                                            text="{evLayoutModel>FiguraDesc}"
                                             wrapping="true"
                                         />
                                     </table:template>

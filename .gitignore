@@ -1,1 +1,35 @@
-node_modules
+# Dependencias instaladas por npm
+node_modules/
+# Salidas generadas por build y empaquetado
+/dist/
+/archive.zip
+/mta_archives/
+# Caches y reportes locales de herramientas y pruebas
+.cache/
+.ui5/
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+*.log
+*.tsbuildinfo
+# Configuracion local y secretos; conservar plantillas sin credenciales
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+# Temporales de editores y sistema operativo
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+~$*
+# Respaldos locales de datos mock; los datos de prueba compartidos si se versionan
+/webapp/localService/**/*.local.json
+/webapp/localService/**/*.local.txt
+# Mantener versionados: webapp/, metadata, mocks, tests, scripts,
+# configuraciones UI5, package.json y package-lock.json.
