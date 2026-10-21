@@ -21,6 +21,10 @@
 
 An SAP Fiori application.
 
+### Repositorio GitHub
+
+[eipa07/zmm_ptplayouts](https://github.com/eipa07/zmm_ptplayouts.git)
+
 ### Starting the generated app
 
 -   This app has been generated using the SAP Fiori tools - App Generator, as part of the SAP Fiori tools suite.  In order to launch the generated app, simply run the following from the generated app root folder:
